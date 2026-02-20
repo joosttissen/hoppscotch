@@ -51,6 +51,12 @@
           :label="t('state.continue_email')"
           @click="mode = 'email'"
         />
+        <HoppSmartItem
+          v-if="allowedAuthProviders.includes('PASSWORD')"
+          :icon="IconEmail"
+          :label="t('state.continue_password')"
+          @click="mode = 'password-signin'"
+        />
       </div>
       <form
         v-if="mode === 'email' && allowedAuthProviders"
@@ -69,6 +75,73 @@
           :loading="signingInWithEmail"
           type="submit"
           :label="t('state.send_magic_link')"
+        />
+      </form>
+      <form
+        v-if="mode === 'password-signin' && allowedAuthProviders"
+        class="flex flex-col space-y-4"
+        @submit.prevent="signInWithPassword"
+      >
+        <HoppSmartInput
+          v-model="passwordForm.email"
+          type="email"
+          placeholder=" "
+          input-styles="floating-input"
+          :label="t('state.email')"
+        />
+        <HoppSmartInput
+          v-model="passwordForm.password"
+          type="password"
+          placeholder=" "
+          input-styles="floating-input"
+          :label="t('state.password')"
+        />
+        <HoppButtonPrimary
+          :loading="signingInWithPassword"
+          type="submit"
+          :label="t('state.sign_in')"
+        />
+        <HoppButtonSecondary
+          :label="t('state.create_account')"
+          class="!p-0"
+          @click="mode = 'password-signup'"
+        />
+      </form>
+      <form
+        v-if="mode === 'password-signup' && allowedAuthProviders"
+        class="flex flex-col space-y-4"
+        @submit.prevent="signUpWithPassword"
+      >
+        <HoppSmartInput
+          v-model="passwordForm.email"
+          type="email"
+          placeholder=" "
+          input-styles="floating-input"
+          :label="t('state.email')"
+        />
+        <HoppSmartInput
+          v-model="passwordForm.displayName"
+          type="text"
+          placeholder=" "
+          input-styles="floating-input"
+          :label="t('state.display_name')"
+        />
+        <HoppSmartInput
+          v-model="passwordForm.password"
+          type="password"
+          placeholder=" "
+          input-styles="floating-input"
+          :label="t('state.password')"
+        />
+        <HoppButtonPrimary
+          :loading="signingUpWithPassword"
+          type="submit"
+          :label="t('state.create_account')"
+        />
+        <HoppButtonSecondary
+          :label="t('state.already_have_account')"
+          class="!p-0"
+          @click="mode = 'password-signin'"
         />
       </form>
       <div
@@ -147,6 +220,14 @@
           @click="mode = 'sign-in'"
         />
       </div>
+      <div v-if="mode === 'password-signin' || mode === 'password-signup'">
+        <HoppButtonSecondary
+          :label="t('state.sign_in_options')"
+          :icon="IconArrowLeft"
+          class="!p-0"
+          @click="mode = 'sign-in'"
+        />
+      </div>
       <div
         v-if="mode === 'email-sent'"
         class="flex justify-between flex-1 text-secondaryLight"
@@ -185,12 +266,19 @@ const privacyPolicyLink = import.meta.env.VITE_APP_PRIVACY_POLICY_LINK;
 const form = ref({
   email: '',
 });
+const passwordForm = ref({
+  email: '',
+  password: '',
+  displayName: '',
+});
 const fetching = ref(false);
 const error = ref(false);
 const signingInWithGoogle = ref(false);
 const signingInWithGitHub = ref(false);
 const signingInWithMicrosoft = ref(false);
 const signingInWithEmail = ref(false);
+const signingInWithPassword = ref(false);
+const signingUpWithPassword = ref(false);
 const mode = ref('sign-in');
 const nonAdminUser = ref(false);
 
@@ -263,6 +351,39 @@ const signInWithEmail = async () => {
     toast.error(t('state.email_signin_failure'));
   }
   signingInWithEmail.value = false;
+};
+
+const signInWithPassword = async () => {
+  signingInWithPassword.value = true;
+  try {
+    await auth.signInWithPassword(
+      passwordForm.value.email,
+      passwordForm.value.password
+    );
+  } catch (e: any) {
+    console.error(e);
+    toast.error(
+      e?.response?.data?.message ?? t('state.password_signin_failure')
+    );
+  }
+  signingInWithPassword.value = false;
+};
+
+const signUpWithPassword = async () => {
+  signingUpWithPassword.value = true;
+  try {
+    await auth.signUpWithPassword(
+      passwordForm.value.email,
+      passwordForm.value.password,
+      passwordForm.value.displayName || undefined
+    );
+  } catch (e: any) {
+    console.error(e);
+    toast.error(
+      e?.response?.data?.message ?? t('state.password_signup_failure')
+    );
+  }
+  signingUpWithPassword.value = false;
 };
 
 const getAllowedAuthProviders = async () => {

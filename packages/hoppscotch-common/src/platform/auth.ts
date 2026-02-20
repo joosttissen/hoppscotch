@@ -265,6 +265,27 @@ export type AuthPlatformDef = {
   getAllowedAuthProviders: () => Promise<E.Either<string, string[]>>
 
   /**
+   * Signs up a new user with email and password.
+   * @param email The email address
+   * @param password The plain text password
+   * @param displayName Optional display name
+   * @returns A promise that resolves when the operation is complete
+   */
+  signUpWithPassword?: (
+    email: string,
+    password: string,
+    displayName?: string,
+  ) => Promise<void>
+
+  /**
+   * Signs in an existing user with email and password.
+   * @param email The email address
+   * @param password The plain text password
+   * @returns A promise that resolves when the operation is complete
+   */
+  signInWithPassword?: (email: string, password: string) => Promise<void>
+
+  /**
    * Defines the additional login items that should be shown in the login screen
    */
   additionalLoginItems?: LoginItemDef[]

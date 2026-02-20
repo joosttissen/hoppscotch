@@ -168,6 +168,20 @@ export const auth = {
 
   signInWithEmail: (email: string) => sendMagicLink(email),
 
+  signInWithPassword: async (email: string, password: string) => {
+    await authQuery.signInWithPassword(email, password);
+    await setInitialUser();
+  },
+
+  signUpWithPassword: async (
+    email: string,
+    password: string,
+    displayName?: string
+  ) => {
+    await authQuery.signUpWithPassword(email, password, displayName);
+    await setInitialUser();
+  },
+
   isSignInWithEmailLink: (url: string) => {
     const urlObject = new URL(url);
     const searchParams = new URLSearchParams(urlObject.search);

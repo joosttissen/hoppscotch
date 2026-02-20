@@ -61,6 +61,75 @@
           />
         </form>
 
+        <form
+          v-if="mode === 'password-signin'"
+          class="flex flex-col space-y-2"
+          @submit.prevent="signInWithPassword"
+        >
+          <HoppSmartInput
+            v-model="passwordForm.email"
+            type="email"
+            placeholder=" "
+            :label="t('auth.email')"
+            input-styles="floating-input"
+          />
+          <HoppSmartInput
+            v-model="passwordForm.password"
+            type="password"
+            placeholder=" "
+            :label="t('auth.password')"
+            input-styles="floating-input"
+          />
+          <HoppButtonPrimary
+            :loading="signingInWithPassword"
+            type="submit"
+            :label="t('auth.sign_in')"
+          />
+          <HoppButtonSecondary
+            :label="t('auth.create_account')"
+            class="!p-0"
+            @click="mode = 'password-signup'"
+          />
+        </form>
+
+        <form
+          v-if="mode === 'password-signup'"
+          class="flex flex-col space-y-2"
+          @submit.prevent="signUpWithPassword"
+        >
+          <HoppSmartInput
+            v-model="passwordForm.email"
+            type="email"
+            placeholder=" "
+            :label="t('auth.email')"
+            input-styles="floating-input"
+          />
+          <HoppSmartInput
+            v-model="passwordForm.displayName"
+            type="text"
+            placeholder=" "
+            :label="t('auth.display_name')"
+            input-styles="floating-input"
+          />
+          <HoppSmartInput
+            v-model="passwordForm.password"
+            type="password"
+            placeholder=" "
+            :label="t('auth.password')"
+            input-styles="floating-input"
+          />
+          <HoppButtonPrimary
+            :loading="signingUpWithPassword"
+            type="submit"
+            :label="t('auth.create_account')"
+          />
+          <HoppButtonSecondary
+            :label="t('auth.already_have_account')"
+            class="!p-0"
+            @click="mode = 'password-signin'"
+          />
+        </form>
+
         <div
           v-if="!allowedAuthProviders?.length && !additionalLoginItems.length"
           class="flex flex-col items-center text-center"
@@ -124,6 +193,14 @@
           @click="mode = 'sign-in'"
         />
       </div>
+      <div v-if="mode === 'password-signin' || mode === 'password-signup'">
+        <HoppButtonSecondary
+          :label="t('auth.all_sign_in_options')"
+          :icon="IconArrowLeft"
+          class="!p-0"
+          @click="mode = 'sign-in'"
+        />
+      </div>
       <div
         v-if="mode === 'email-sent'"
         class="flex flex-1 justify-between text-secondaryLight"
@@ -180,12 +257,20 @@ const form = {
   email: "",
 }
 
+const passwordForm = ref({
+  email: "",
+  password: "",
+  displayName: "",
+})
+
 const isLoadingAllowedAuthProviders = ref(true)
 
 const signingInWithGoogle = ref(false)
 const signingInWithGitHub = ref(false)
 const signingInWithMicrosoft = ref(false)
 const signingInWithEmail = ref(false)
+const signingInWithPassword = ref(false)
+const signingUpWithPassword = ref(false)
 const mode = ref("sign-in")
 
 const tosLink = import.meta.env.VITE_APP_TOS_LINK
@@ -356,6 +441,37 @@ const signInWithEmail = async () => {
     })
 }
 
+const signInWithPassword = async () => {
+  signingInWithPassword.value = true
+  try {
+    await platform.auth.signInWithPassword?.(
+      passwordForm.value.email,
+      passwordForm.value.password
+    )
+  } catch (e: any) {
+    console.error(e)
+    toast.error(e?.response?.data?.message ?? t("error.something_went_wrong"))
+  } finally {
+    signingInWithPassword.value = false
+  }
+}
+
+const signUpWithPassword = async () => {
+  signingUpWithPassword.value = true
+  try {
+    await platform.auth.signUpWithPassword?.(
+      passwordForm.value.email,
+      passwordForm.value.password,
+      passwordForm.value.displayName || undefined
+    )
+  } catch (e: any) {
+    console.error(e)
+    toast.error(e?.response?.data?.message ?? t("error.something_went_wrong"))
+  } finally {
+    signingUpWithPassword.value = false
+  }
+}
+
 const authProvidersAvailable: AuthProviderItem[] = [
   {
     id: "GITHUB",
@@ -394,6 +510,15 @@ const authProvidersAvailable: AuthProviderItem[] = [
       mode.value = "email"
     },
     isLoading: signingInWithEmail,
+  },
+  {
+    id: "PASSWORD",
+    icon: IconEmail,
+    label: t("auth.continue_with_password"),
+    action: () => {
+      mode.value = "password-signin"
+    },
+    isLoading: signingInWithPassword,
   },
 ]
 

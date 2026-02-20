@@ -195,6 +195,28 @@ async function sendMagicLink(email: string) {
   return res.data
 }
 
+async function signUpWithPassword(
+  email: string,
+  password: string,
+  displayName?: string
+) {
+  await axios.post(
+    `${import.meta.env.VITE_BACKEND_API_URL}/auth/signup-with-password`,
+    { email, password, displayName },
+    { withCredentials: true }
+  )
+  await setInitialUser()
+}
+
+async function signInWithPassword(email: string, password: string) {
+  await axios.post(
+    `${import.meta.env.VITE_BACKEND_API_URL}/auth/signin-with-password`,
+    { email, password },
+    { withCredentials: true }
+  )
+  await setInitialUser()
+}
+
 export const def: AuthPlatformDef = {
   getCurrentUserStream: () => currentUser$,
   getAuthEventsStream: () => authEvents$,
@@ -274,6 +296,18 @@ export const def: AuthPlatformDef = {
 
   async signInWithEmail(email: string) {
     await sendMagicLink(email)
+  },
+
+  async signUpWithPassword(
+    email: string,
+    password: string,
+    displayName?: string
+  ) {
+    await signUpWithPassword(email, password, displayName)
+  },
+
+  async signInWithPassword(email: string, password: string) {
+    await signInWithPassword(email, password)
   },
 
   isSignInWithEmailLink(url: string) {

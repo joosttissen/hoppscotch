@@ -15,6 +15,8 @@ import {
   MAGIC_LINK_EXPIRED,
   USER_NOT_FOUND,
   INVALID_REFRESH_TOKEN,
+  INVALID_PASSWORD,
+  USER_ALREADY_EXISTS,
 } from 'src/errors';
 import { validateEmail } from 'src/utils';
 import {
@@ -388,5 +390,93 @@ export class AuthService {
 
   getAuthProviders() {
     return this.infraConfigService.getAllowedAuthProviders();
+  }
+
+  /**
+   * Sign up a new user with email and password
+   *
+   * @param email User's email
+   * @param password Plain text password
+   * @param displayName Optional display name
+   * @returns Either of generated AuthTokens
+   */
+  async signUpWithPassword(
+    email: string,
+    password: string,
+    displayName?: string,
+  ): Promise<E.Right<AuthTokens> | E.Left<RESTError>> {
+    if (!validateEmail(email))
+      return E.left({
+        message: INVALID_EMAIL,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+
+    const existingUser = await this.usersService.findUserByEmail(email);
+    if (O.isSome(existingUser))
+      return E.left({
+        message: USER_ALREADY_EXISTS,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+
+    const passwordHash = await argon2.hash(password);
+    const user = await this.usersService.createUserViaPassword(
+      email,
+      displayName ?? null,
+      passwordHash,
+    );
+
+    const tokens = await this.generateAuthTokens(user.uid);
+    if (E.isLeft(tokens)) return E.left(tokens.left);
+
+    this.usersService.updateUserLastLoggedOn(user.uid);
+
+    return E.right(tokens.right);
+  }
+
+  /**
+   * Sign in an existing user with email and password
+   *
+   * @param email User's email
+   * @param password Plain text password
+   * @returns Either of generated AuthTokens
+   */
+  async signInWithPassword(
+    email: string,
+    password: string,
+  ): Promise<E.Right<AuthTokens> | E.Left<RESTError>> {
+    if (!validateEmail(email))
+      return E.left({
+        message: INVALID_EMAIL,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+
+    const queriedUser = await this.usersService.findUserByEmail(email);
+    if (O.isNone(queriedUser))
+      return E.left({
+        message: USER_NOT_FOUND,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+
+    const user = queriedUser.value;
+
+    if (!user.passwordHash)
+      return E.left({
+        message: INVALID_PASSWORD,
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+
+    const isPasswordValid = await argon2.verify(user.passwordHash, password);
+    if (!isPasswordValid)
+      return E.left({
+        message: INVALID_PASSWORD,
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+
+    const tokens = await this.generateAuthTokens(user.uid);
+    if (E.isLeft(tokens)) return E.left(tokens.left);
+
+    this.usersService.updateUserLastLoggedOn(user.uid);
+
+    return E.right(tokens.right);
   }
 }

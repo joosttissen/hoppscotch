@@ -12,6 +12,8 @@ import {
 import { AuthService } from './auth.service';
 import { SignInMagicDto } from './dto/signin-magic.dto';
 import { VerifyMagicDto } from './dto/verify-magic.dto';
+import { SignInPasswordDto } from './dto/signin-password.dto';
+import { SignUpPasswordDto } from './dto/signup-password.dto';
 import { Response } from 'express';
 import * as E from 'fp-ts/Either';
 import { RTJwtAuthGuard } from './guards/rt-jwt-auth.guard';
@@ -187,6 +189,57 @@ export class AuthController {
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return res.status(200).send();
+  }
+
+  /**
+   ** Route to sign up a new user with email and password
+   */
+  @Post('signup-with-password')
+  async signUpWithPassword(
+    @Body() dto: SignUpPasswordDto,
+    @Res() res: Response,
+  ) {
+    if (
+      !authProviderCheck(
+        AuthProvider.PASSWORD,
+        this.configService.get('INFRA.VITE_ALLOWED_AUTH_PROVIDERS'),
+      )
+    ) {
+      throwHTTPErr({ message: AUTH_PROVIDER_NOT_SPECIFIED, statusCode: 404 });
+    }
+
+    const result = await this.authService.signUpWithPassword(
+      dto.email,
+      dto.password,
+      dto.displayName,
+    );
+    if (E.isLeft(result)) throwHTTPErr(result.left);
+    authCookieHandler(res, result.right, false, null, this.configService);
+  }
+
+  /**
+   ** Route to sign in an existing user with email and password
+   */
+  @Post('signin-with-password')
+  async signInWithPassword(
+    @Body() dto: SignInPasswordDto,
+    @Res() res: Response,
+  ) {
+    if (
+      !authProviderCheck(
+        AuthProvider.PASSWORD,
+        this.configService.get('INFRA.VITE_ALLOWED_AUTH_PROVIDERS'),
+      )
+    ) {
+      throwHTTPErr({ message: AUTH_PROVIDER_NOT_SPECIFIED, statusCode: 404 });
+    }
+
+    const result = await this.authService.signInWithPassword(
+      dto.email,
+      dto.password,
+    );
+    if (E.isLeft(result)) throwHTTPErr(result.left);
+    authCookieHandler(res, result.right, false, null, this.configService);
   }
 
   @Get('verify/admin')
