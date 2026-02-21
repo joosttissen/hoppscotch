@@ -966,3 +966,15 @@ export const PUBLISHED_DOCS_DELETION_FAILED = 'published_docs/deletion_failed';
  * (PublishedDocsService)
  */
 export const PUBLISHED_DOCS_NOT_FOUND = 'published_docs/not_found';
+
+/**
+ * Password provided is invalid or incorrect
+ * (AuthService)
+ */
+export const INVALID_PASSWORD = 'user/invalid_password' as const;
+
+/**
+ * User with this email already exists
+ * (AuthService)
+ */
+export const USER_ALREADY_EXISTS = 'user/already_exists' as const;

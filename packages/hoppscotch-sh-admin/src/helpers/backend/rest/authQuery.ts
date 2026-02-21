@@ -29,6 +29,14 @@ export default {
       token,
       deviceIdentifier,
     }),
+  signInWithPassword: (email: string, password: string) =>
+    restApi.post('/auth/signin-with-password', { email, password }),
+  signUpWithPassword: (
+    email: string,
+    password: string,
+    displayName?: string
+  ) =>
+    restApi.post('/auth/signup-with-password', { email, password, displayName }),
   getFirstTimeInfraSetupStatus: () => restApi.get('/site/setup'),
   updateFirstTimeInfraSetupStatus: () => restApi.put('/site/setup'),
   addOnBoardingConfigs: (config: Record<string, any>) =>
