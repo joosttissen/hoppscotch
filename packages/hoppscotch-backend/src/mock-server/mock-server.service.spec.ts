@@ -66,6 +66,7 @@ const user: User = {
   photoURL: null,
   isAdmin: false,
   refreshToken: null,
+  passwordHash: null,
   currentGQLSession: '{}',
   currentRESTSession: '{}',
   createdOn: currentTime,

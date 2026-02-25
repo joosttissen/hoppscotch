@@ -25,6 +25,7 @@ const user: AuthUser = {
   photoURL: 'user-photo-url',
   isAdmin: false,
   refreshToken: 'hbfvdkhjbvkdvdfjvbnkhjb',
+  passwordHash: null,
   currentGQLSession: {},
   currentRESTSession: {},
   lastLoggedOn: currentTime,
