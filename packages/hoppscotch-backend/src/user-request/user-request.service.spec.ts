@@ -37,6 +37,7 @@ const user: AuthUser = {
   photoURL: 'https://example.com/photo.png',
   isAdmin: false,
   refreshToken: null,
+  passwordHash: null,
   lastLoggedOn: new Date(),
   lastActiveOn: new Date(),
   createdOn: new Date(),

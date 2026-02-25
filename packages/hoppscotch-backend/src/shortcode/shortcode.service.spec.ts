@@ -35,6 +35,7 @@ const user: AuthUser = {
   photoURL: 'https://en.wikipedia.org/wiki/Dwight_Schrute',
   isAdmin: false,
   refreshToken: 'hbfvdkhjbvkdvdfjvbnkhjb',
+  passwordHash: null,
   lastLoggedOn: createdOn,
   lastActiveOn: createdOn,
   createdOn: createdOn,
