@@ -88,6 +88,7 @@
           placeholder=" "
           input-styles="floating-input"
           :label="t('state.email')"
+          autofocus
         />
         <HoppSmartInput
           v-model="passwordForm.password"
@@ -246,6 +247,7 @@
 <script setup lang="ts">
 import { computedAsync } from '@vueuse/core';
 import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useI18n } from '~/composables/i18n';
 import { useToast } from '~/composables/toast';
 import { auth } from '~/helpers/auth';
@@ -259,6 +261,7 @@ import IconFileText from '~icons/lucide/file-text';
 
 const t = useI18n();
 const toast = useToast();
+const router = useRouter();
 
 const tosLink = import.meta.env.VITE_APP_TOS_LINK;
 const privacyPolicyLink = import.meta.env.VITE_APP_PRIVACY_POLICY_LINK;
@@ -360,6 +363,7 @@ const signInWithPassword = async () => {
       passwordForm.value.email,
       passwordForm.value.password
     );
+    router.push({ name: 'dashboard' });
   } catch (e: any) {
     console.error(e);
     toast.error(
@@ -377,6 +381,7 @@ const signUpWithPassword = async () => {
       passwordForm.value.password,
       passwordForm.value.displayName || undefined
     );
+    router.push({ name: 'dashboard' });
   } catch (e: any) {
     console.error(e);
     toast.error(

@@ -1,6 +1,6 @@
 {
   "name": "Hoppscotch",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:18",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
   "forwardPorts": [3000],
   "features": {
     "ghcr.io/NicoVIII/devcontainer-features/pnpm:1": {}

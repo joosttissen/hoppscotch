@@ -7,7 +7,7 @@ import { getLocalConfig, setLocalConfig } from '~/helpers/localpersistence';
 import { makeReadableKey } from '~/helpers/utils/readableKey';
 
 export type OAuthProvider = 'GOOGLE' | 'GITHUB' | 'MICROSOFT';
-export type EnabledConfig = OAuthProvider | 'OAUTH' | 'MAILER' | 'EMAIL';
+export type EnabledConfig = OAuthProvider | 'OAUTH' | 'MAILER' | 'EMAIL' | 'PASSWORD';
 
 // common OAuth keys used across providers
 type OAuthKeys = 'CLIENT_ID' | 'CLIENT_SECRET' | 'CALLBACK_URL' | 'SCOPE';
@@ -294,7 +294,11 @@ export function useOnboardingConfigHandler() {
 
     const validated = validateConfigs(payload);
 
-    if (!validated || Object.keys(validated).length === 0) {
+    const hasPasswordOnly = enabledConfigs.value.includes('PASSWORD');
+    if (
+      !validated ||
+      (Object.keys(validated).length === 0 && !hasPasswordOnly)
+    ) {
       toast.error(t('onboarding.add_atleast_one_auth_provider'));
       submittingConfigs.value = false;
       return;

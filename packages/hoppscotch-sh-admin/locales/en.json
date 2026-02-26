@@ -206,6 +206,10 @@
       "description_accordian": "Select the OAuth providers you want to enable and provide the necessary configurations.",
       "title": "OAuth"
     },
+    "password": {
+      "description": "Allow users to sign in with email and password.",
+      "title": "Password"
+    },
     "onboarding_incomplete": {
       "description": "You have not completed the onboarding process. Please set up at least one authentication provider to continue.",
       "title": "Onboarding Incomplete"

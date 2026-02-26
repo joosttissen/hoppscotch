@@ -67,6 +67,13 @@
                   class="relative inline-block h-6 w-6 rounded-full border-2 border-primary object-cover object-center hover:z-10 focus:z-10"
                 />
               </AuthProviderCard>
+
+              <AuthProviderCard
+                title="onboarding.password.title"
+                description="onboarding.password.description"
+                :selected="isSelected('PASSWORD')"
+                @click="toggleSelectedOption('PASSWORD')"
+              />
             </div>
 
             <HoppButtonPrimary
@@ -176,7 +183,7 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-type SelectedOption = 'OAUTH' | 'SMTP';
+type SelectedOption = 'OAUTH' | 'SMTP' | 'PASSWORD';
 
 const authConfigStep = ref(1);
 const selectedOptions = ref<SelectedOption[]>([]);
