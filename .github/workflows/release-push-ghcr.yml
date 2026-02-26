@@ -13,9 +13,8 @@ jobs:
     strategy:
       matrix:
         platform: [
-          { platform: linux/amd64, cache: ghcr-release-amd64, artifactSuffix: amd64 },
-          { platform: linux/arm64, cache: ghcr-release-arm64, artifactSuffix: arm64 },
-        ]
+          { platform: linux/amd64, cache: ghcr-release-amd64, artifactSuffix: amd64 }
+          ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
