@@ -317,6 +317,9 @@ export class InfraConfigService implements OnModuleInit, OnModuleDestroy {
         } else {
           return configMap.MAILER_SMTP_URL && configMap.MAILER_ADDRESS_FROM;
         }
+      case AuthProvider.PASSWORD:
+        // Password auth needs no external credentials
+        return true;
       default:
         return false;
     }
