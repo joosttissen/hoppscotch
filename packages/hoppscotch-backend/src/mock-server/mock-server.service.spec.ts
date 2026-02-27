@@ -1395,6 +1395,174 @@ describe('MockServerService', () => {
 
       expect(E.isRight(result)).toBe(true);
     });
+
+    test('should execute postResponseScript and modify response body', async () => {
+      const scriptExample = {
+        ...mockExample,
+        endpoint: 'http://api.example.com/users',
+        responseBody: '{"original": true}',
+        postResponseScript: `
+          const body = JSON.parse(response.body);
+          body.modified = true;
+          response.body = JSON.stringify(body);
+        `,
+      };
+      const requestWithScript = {
+        ...userRequest,
+        mockExamples: {
+          examples: [scriptExample],
+        },
+      };
+
+      mockPrisma.userCollection.findUnique.mockResolvedValue(userCollection);
+      mockPrisma.userCollection.findMany.mockResolvedValue([]);
+      mockPrisma.userRequest.findMany.mockResolvedValue([requestWithScript] as any);
+
+      const result = await mockServerService.handleMockRequest(
+        dbMockServer,
+        '/users',
+        'GET',
+        {},
+        {},
+        null,
+      );
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const body = JSON.parse((result.right as any).body);
+        expect(body.original).toBe(true);
+        expect(body.modified).toBe(true);
+      }
+    });
+
+    test('should execute postResponseScript and modify response status code', async () => {
+      const scriptExample = {
+        ...mockExample,
+        endpoint: 'http://api.example.com/users',
+        postResponseScript: `response.statusCode = 201;`,
+      };
+      const requestWithScript = {
+        ...userRequest,
+        mockExamples: {
+          examples: [scriptExample],
+        },
+      };
+
+      mockPrisma.userCollection.findUnique.mockResolvedValue(userCollection);
+      mockPrisma.userCollection.findMany.mockResolvedValue([]);
+      mockPrisma.userRequest.findMany.mockResolvedValue([requestWithScript] as any);
+
+      const result = await mockServerService.handleMockRequest(
+        dbMockServer,
+        '/users',
+        'GET',
+        {},
+        {},
+        null,
+      );
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect((result.right as any).statusCode).toBe(201);
+      }
+    });
+
+    test('should execute postResponseScript and modify response headers', async () => {
+      const scriptExample = {
+        ...mockExample,
+        endpoint: 'http://api.example.com/users',
+        postResponseScript: `response.headers['X-Custom-Header'] = 'custom-value';`,
+      };
+      const requestWithScript = {
+        ...userRequest,
+        mockExamples: {
+          examples: [scriptExample],
+        },
+      };
+
+      mockPrisma.userCollection.findUnique.mockResolvedValue(userCollection);
+      mockPrisma.userCollection.findMany.mockResolvedValue([]);
+      mockPrisma.userRequest.findMany.mockResolvedValue([requestWithScript] as any);
+
+      const result = await mockServerService.handleMockRequest(
+        dbMockServer,
+        '/users',
+        'GET',
+        {},
+        {},
+        null,
+      );
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const headers = JSON.parse((result.right as any).headers);
+        expect(headers['X-Custom-Header']).toBe('custom-value');
+      }
+    });
+
+    test('should continue with original response when postResponseScript throws', async () => {
+      const scriptExample = {
+        ...mockExample,
+        endpoint: 'http://api.example.com/users',
+        responseBody: '{"success": true}',
+        postResponseScript: `throw new Error('Script error');`,
+      };
+      const requestWithScript = {
+        ...userRequest,
+        mockExamples: {
+          examples: [scriptExample],
+        },
+      };
+
+      mockPrisma.userCollection.findUnique.mockResolvedValue(userCollection);
+      mockPrisma.userCollection.findMany.mockResolvedValue([]);
+      mockPrisma.userRequest.findMany.mockResolvedValue([requestWithScript] as any);
+
+      const result = await mockServerService.handleMockRequest(
+        dbMockServer,
+        '/users',
+        'GET',
+        {},
+        {},
+        null,
+      );
+
+      // Should still return a successful response (with the original body)
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect((result.right as any).body).toBe('{"success": true}');
+      }
+    });
+
+    test('should not execute postResponseScript when it is empty', async () => {
+      const scriptExample = {
+        ...mockExample,
+        endpoint: 'http://api.example.com/users',
+        responseBody: '{"success": true}',
+        postResponseScript: '',
+      };
+      const requestWithScript = {
+        ...userRequest,
+        mockExamples: {
+          examples: [scriptExample],
+        },
+      };
+
+      mockPrisma.userCollection.findUnique.mockResolvedValue(userCollection);
+      mockPrisma.userCollection.findMany.mockResolvedValue([]);
+      mockPrisma.userRequest.findMany.mockResolvedValue([requestWithScript] as any);
+
+      const result = await mockServerService.handleMockRequest(
+        dbMockServer,
+        '/users',
+        'GET',
+      );
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect((result.right as any).body).toBe('{"success": true}');
+      }
+    });
   });
 
   describe('checkMockServerAccess', () => {
