@@ -3,8 +3,6 @@ package bundle
 import "time"
 
 const (
-	Version = "2026.1.1"
-
 	DefaultMaxSize = 50 * 1024 * 1024
 
 	// zstd compression method for ZIP

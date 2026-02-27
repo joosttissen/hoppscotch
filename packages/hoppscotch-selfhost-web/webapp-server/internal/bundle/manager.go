@@ -5,10 +5,13 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/zeebo/blake3"
 )
 
 // Manager holds the bundle in memory and handles signing.
@@ -42,9 +45,14 @@ func NewManager(
 	// sign the raw bytes, clients will verify against this
 	signature := ed25519.Sign(signingKey, content)
 
+	// derive version from content hash so cache is invalidated whenever frontend changes
+	h := blake3.New()
+	h.Write(content)
+	version := hex.EncodeToString(h.Sum(nil)[:16])
+
 	bundle := &Bundle{
 		Metadata: Metadata{
-			Version:   Version,
+			Version:   version,
 			CreatedAt: time.Now().UTC(),
 			Signature: base64.StdEncoding.EncodeToString(signature),
 			Manifest:  Manifest{Files: files},
