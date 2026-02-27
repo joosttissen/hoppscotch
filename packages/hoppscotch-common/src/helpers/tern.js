@@ -4,6 +4,7 @@ import ECMA_DEF from "~/helpers/terndoc/ecma.json"
 import PW_PRE_DEF from "~/helpers/terndoc/pw-pre.json"
 import PW_TEST_DEF from "~/helpers/terndoc/pw-test.json"
 import PW_EXTRAS_DEF from "~/helpers/terndoc/pw-extras.json"
+import PW_POST_RESPONSE_DEF from "~/helpers/terndoc/pw-post-response.json"
 
 const server = new tern.Server({
   defs: [ECMA_DEF, PW_EXTRAS_DEF],
@@ -44,6 +45,7 @@ function performLinting(code) {
 export function performPreRequestLinting(code) {
   server.deleteDefs("pw-test")
   server.deleteDefs("pw-pre")
+  server.deleteDefs("pw-post-response")
   server.addDefs(PW_PRE_DEF)
   return performLinting(code)
 }
@@ -51,6 +53,7 @@ export function performPreRequestLinting(code) {
 export function performTestLinting(code) {
   server.deleteDefs("pw-test")
   server.deleteDefs("pw-pre")
+  server.deleteDefs("pw-post-response")
   server.addDefs(PW_TEST_DEF)
   return performLinting(code)
 }
@@ -105,6 +108,7 @@ function performCompletion(code, row, col) {
 export function getPreRequestScriptCompletions(code, row, col) {
   server.deleteDefs("pw-test")
   server.deleteDefs("pw-pre")
+  server.deleteDefs("pw-post-response")
   server.addDefs(PW_PRE_DEF)
   return performCompletion(code, row, col)
 }
@@ -112,6 +116,23 @@ export function getPreRequestScriptCompletions(code, row, col) {
 export function getTestScriptCompletions(code, row, col) {
   server.deleteDefs("pw-test")
   server.deleteDefs("pw-pre")
+  server.deleteDefs("pw-post-response")
   server.addDefs(PW_TEST_DEF)
   return performCompletion(code, row, col)
+}
+
+export function getPostResponseScriptCompletions(code, row, col) {
+  server.deleteDefs("pw-test")
+  server.deleteDefs("pw-pre")
+  server.deleteDefs("pw-post-response")
+  server.addDefs(PW_POST_RESPONSE_DEF)
+  return performCompletion(code, row, col)
+}
+
+export function performPostResponseLinting(code) {
+  server.deleteDefs("pw-test")
+  server.deleteDefs("pw-pre")
+  server.deleteDefs("pw-post-response")
+  server.addDefs(PW_POST_RESPONSE_DEF)
+  return performLinting(code)
 }

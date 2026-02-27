@@ -1762,6 +1762,7 @@ const onAddExample = async () => {
 
   // Create a new example response with default values and original request
   const newExample: HoppRESTRequestResponse = {
+    v: 1,
     name: exampleName,
     code: 200,
     status: "OK",

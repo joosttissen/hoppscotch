@@ -72,6 +72,7 @@
             placeholder=" "
             :label="t('auth.email')"
             input-styles="floating-input"
+            autofocus
           />
           <HoppSmartInput
             v-model="passwordForm.password"

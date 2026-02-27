@@ -24,6 +24,14 @@ export const HoppRESTRequestResponse = createVersionedEntity({
 
     if (versionCheck.success) return versionCheck.data.v
 
+    // If no v field but postResponseScript is present, treat as version 1
+    // (data saved before the v field was introduced to V1_SCHEMA)
+    if (
+      typeof (data as Record<string, unknown>).postResponseScript === "string"
+    ) {
+      return 1
+    }
+
     // Schema starts from version 0, so if the version is not present,
     // we assume it's version 0
     const result = V0_VERSION.schema.safeParse(data)

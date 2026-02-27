@@ -118,6 +118,7 @@ const onSaveAsExample = () => {
     const resName = responseName.value.trim()
 
     const responseObj: HoppRESTRequestResponse = {
+      v: 1,
       status: statusText,
       code: response.statusCode,
       headers: response.headers,
