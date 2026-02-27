@@ -57,6 +57,7 @@
     "dotenv": "17.2.3",
     "express": "5.2.1",
     "express-session": "1.18.2",
+    "@hoppscotch/data": "workspace:^",
     "fp-ts": "2.16.11",
     "graphql": "16.12.0",
     "graphql-query-complexity": "1.1.0",
