@@ -231,6 +231,7 @@ const getHoppResponses = (
           body: getHoppResponseBody(response.body),
           headers: getHoppReqHeaders(response.headers),
           code: response.code,
+          postResponseScript: "",
           originalRequest: makeHoppRESTResponseOriginalRequest({
             auth: getHoppReqAuth(response.originalRequest?.auth),
             body: getHoppReqBody({

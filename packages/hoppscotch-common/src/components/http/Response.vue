@@ -124,6 +124,7 @@ const onSaveAsExample = () => {
       body: responseBodyText.value,
       name: resName,
       originalRequest,
+      postResponseScript: "",
     }
 
     doc.value.request.responses = {

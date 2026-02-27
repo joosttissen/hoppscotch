@@ -30,6 +30,21 @@
         :is-editable="true"
       />
     </HoppSmartTab>
+    <HoppSmartTab
+      id="postResponseScript"
+      :label="t('tab.post_response_script')"
+      :indicator="
+        !!doc.response.postResponseScript &&
+        doc.response.postResponseScript.length > 0
+      "
+      class="flex flex-1 flex-col"
+    >
+      <HttpExampleResponseScript
+        :model-value="doc.response.postResponseScript ?? ''"
+        :is-active="selectedLensTab === 'postResponseScript'"
+        @update:model-value="doc.response.postResponseScript = $event"
+      />
+    </HoppSmartTab>
   </HoppSmartTabs>
 </template>
 

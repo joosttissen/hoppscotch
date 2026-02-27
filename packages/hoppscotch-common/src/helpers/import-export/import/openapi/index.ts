@@ -287,6 +287,7 @@ const parseOpenAPIV3Responses = (
       headers,
       body: stringifiedBody,
       originalRequest,
+      postResponseScript: "",
     }
   }
 
@@ -362,6 +363,7 @@ const parseOpenAPIV2Responses = (
       headers,
       body: stringifiedBody,
       originalRequest,
+      postResponseScript: "",
     }
   }
 

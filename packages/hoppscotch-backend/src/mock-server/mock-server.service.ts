@@ -10,6 +10,7 @@ import {
 } from './mock-server.model';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
+import * as vm from 'vm';
 import {
   parseBodyEnvVariablesE,
   translateToNewEnvironmentVariables,
@@ -711,6 +712,7 @@ export class MockServerService {
     method: string,
     queryParams?: Record<string, string>,
     requestHeaders?: Record<string, string>,
+    requestBody?: any,
   ): Promise<E.Either<string, MockServerResponse>> {
     try {
       // OPTIMIZATION: Fetch collection IDs once (recursive DB query)
@@ -733,6 +735,15 @@ export class MockServerService {
         collectionIds,
       );
 
+      // Build request context for post-response script execution
+      const requestContext = {
+        method: method.toUpperCase(),
+        path,
+        query: queryParams || {},
+        headers: requestHeaders || {},
+        body: requestBody,
+      };
+
       // OPTIMIZATION: Check for custom headers first (fastest path)
       // If user specified exact example, return it immediately without scoring
       if (requestHeaders) {
@@ -747,7 +758,7 @@ export class MockServerService {
             method,
           );
           if (exactMatch) {
-            return this.formatExampleResponse(exactMatch, mockServer.delayInMs, envVariables);
+            return this.formatExampleResponse(exactMatch, mockServer.delayInMs, envVariables, requestContext);
           }
         }
       }
@@ -806,6 +817,7 @@ export class MockServerService {
         selectedExample.example,
         mockServer.delayInMs,
         envVariables,
+        requestContext,
       );
     } catch (error) {
       console.error('Error handling mock request:', error);
@@ -1074,6 +1086,7 @@ export class MockServerService {
         responseBody: exampleData.responseBody || '',
         responseHeaders: exampleData.responseHeaders || [],
         requestHeaders: exampleData.headers || [],
+        postResponseScript: exampleData.postResponseScript || '',
       };
     } catch (error) {
       console.error('Error parsing example:', error);
@@ -1226,11 +1239,21 @@ export class MockServerService {
    * Processes predefined dynamic variables (e.g. <<$timestamp>>, <<$guid>>) and
    * user-defined workspace environment variables (e.g. <<myVar>>) in the response
    * body and header values using @hoppscotch/data's parseBodyEnvVariablesE.
+   * If the example has a postResponseScript, it is executed with a sandboxed context
+   * that exposes the incoming request and the response, allowing the script to
+   * mutate the response body, headers, and status code before returning.
    */
   private formatExampleResponse(
     example: any,
     delayInMs: number,
     envVariables: Environment['variables'] = [],
+    requestContext?: {
+      method: string;
+      path: string;
+      query: Record<string, string>;
+      headers: Record<string, string>;
+      body?: any;
+    },
   ): E.Either<string, MockServerResponse> {
     // Convert response headers array to object, interpolating variables
     const headersObj: Record<string, string> = {};
@@ -1251,11 +1274,86 @@ export class MockServerService {
       E.getOrElse(() => rawBody),
     );
 
+    let finalBody = body;
+    let finalHeaders = headersObj;
+    let finalStatusCode = example.statusCode || 200;
+
+    // Execute post-response script if present
+    if (example.postResponseScript && requestContext) {
+      try {
+        const result = this.executePostResponseScript(
+          example.postResponseScript,
+          requestContext,
+          {
+            body: finalBody,
+            headers: { ...finalHeaders },
+            statusCode: finalStatusCode,
+          },
+        );
+        finalBody = result.body;
+        finalHeaders = result.headers;
+        finalStatusCode = result.statusCode;
+      } catch (scriptError) {
+        console.error('Post-response script execution error:', scriptError);
+        // Continue with the original response on script error
+      }
+    }
+
     return E.right({
-      statusCode: example.statusCode || 200,
-      body,
-      headers: JSON.stringify(headersObj),
+      statusCode: finalStatusCode,
+      body: finalBody,
+      headers: JSON.stringify(finalHeaders),
       delay: delayInMs || 0,
     });
+  }
+
+  /**
+   * Execute a post-response script in a sandboxed Node.js vm context.
+   * The script has access to read-only `request` and mutable `response` objects.
+   * Returns the (possibly modified) response body, headers, and status code.
+   */
+  private executePostResponseScript(
+    script: string,
+    request: {
+      method: string;
+      path: string;
+      query: Record<string, string>;
+      headers: Record<string, string>;
+      body?: any;
+    },
+    response: {
+      body: string;
+      headers: Record<string, string>;
+      statusCode: number;
+    },
+  ): { body: string; headers: Record<string, string>; statusCode: number } {
+    const responseObj = {
+      body: response.body,
+      headers: { ...response.headers },
+      statusCode: response.statusCode,
+    };
+
+    const sandbox = {
+      request: Object.freeze({ ...request }),
+      response: responseObj,
+      JSON,
+      console: {
+        log: (...args: any[]) => console.log('[MockScript]', ...args),
+        error: (...args: any[]) => console.error('[MockScript]', ...args),
+        warn: (...args: any[]) => console.warn('[MockScript]', ...args),
+      },
+    };
+
+    vm.runInNewContext(script, sandbox, { timeout: 2000 });
+
+    return {
+      body: typeof responseObj.body === 'string'
+        ? responseObj.body
+        : JSON.stringify(responseObj.body),
+      headers: responseObj.headers,
+      statusCode: typeof responseObj.statusCode === 'number'
+        ? responseObj.statusCode
+        : response.statusCode,
+    };
   }
 }
