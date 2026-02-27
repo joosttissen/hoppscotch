@@ -226,6 +226,7 @@ const getHoppResponses = (
       responses.all(),
       A.map((response) => {
         const res = {
+          v: 1 as const,
           name: response.name,
           status: response.status,
           body: getHoppResponseBody(response.body),

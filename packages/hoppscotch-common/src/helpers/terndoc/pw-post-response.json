@@ -1,0 +1,13 @@
+{
+  "!name": "pw-post-response",
+  "response": {
+    "body": "string",
+    "headers": "?",
+    "statusCode": "number"
+  },
+  "request": {
+    "body": "string",
+    "headers": "?",
+    "query": "?"
+  }
+}

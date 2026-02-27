@@ -281,6 +281,7 @@ const parseOpenAPIV3Responses = (
     }
 
     res[name] = {
+      v: 1,
       name,
       status,
       code,
@@ -357,6 +358,7 @@ const parseOpenAPIV2Responses = (
     }
 
     res[name] = {
+      v: 1,
       name,
       status,
       code,

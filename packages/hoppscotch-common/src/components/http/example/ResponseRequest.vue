@@ -197,6 +197,18 @@ const saveExample = async () => {
       console.error(e)
     }
 
+    // Update any open request tab so it doesn't overwrite the saved example
+    const requestTab = tabs.getTabs().find(
+      (t) =>
+        t.document.type === "request" &&
+        t.document.saveContext?.originLocation === "user-collection" &&
+        t.document.saveContext.folderPath === saveCtx.folderPath &&
+        t.document.saveContext.requestIndex === saveCtx.requestIndex
+    )
+    if (requestTab && requestTab.document.type === "request") {
+      requestTab.document.request.responses = request.responses
+    }
+
     toast.success(`${t("response.saved")}`)
   } else if (saveCtx.originLocation === "team-collection") {
     const request = await getSingleRequest(saveCtx.requestID)
@@ -225,6 +237,20 @@ const saveExample = async () => {
               toast.error(`${t("profile.no_permission")}`)
             } else {
               tab.value.document.isDirty = false
+
+              // Update any open request tab so it doesn't overwrite the saved example
+              const requestTab = tabs.getTabs().find(
+                (t) =>
+                  t.document.type === "request" &&
+                  t.document.saveContext?.originLocation ===
+                    "team-collection" &&
+                  t.document.saveContext.requestID === saveCtx.requestID
+              )
+              if (requestTab && requestTab.document.type === "request") {
+                requestTab.document.request.responses =
+                  parsedRequest.responses
+              }
+
               toast.success(`${t("response.saved")}`)
             }
           })
