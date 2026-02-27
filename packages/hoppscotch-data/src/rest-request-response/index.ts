@@ -1,6 +1,7 @@
 import { InferredEntity, createVersionedEntity, entityReference } from "verzod"
 import { z } from "zod"
 import V0_VERSION from "./v/0"
+import V1_VERSION from "./v/1"
 import {
   HoppRESTResOriginalReqSchemaVersion,
   HoppRESTResponseOriginalRequest,
@@ -13,9 +14,10 @@ const versionedObject = z.object({
 })
 
 export const HoppRESTRequestResponse = createVersionedEntity({
-  latestVersion: 0,
+  latestVersion: 1,
   versionMap: {
     0: V0_VERSION,
+    1: V1_VERSION,
   },
   getVersion(data) {
     const versionCheck = versionedObject.safeParse(data)

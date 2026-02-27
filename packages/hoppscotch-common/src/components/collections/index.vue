@@ -1768,6 +1768,7 @@ const onAddExample = async () => {
     headers: [],
     body: "",
     originalRequest,
+    postResponseScript: "",
   }
 
   // Calculate the new example's index (will be used as exampleID)

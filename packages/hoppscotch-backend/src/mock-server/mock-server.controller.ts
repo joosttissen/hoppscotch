@@ -71,6 +71,7 @@ export class MockServerController {
         method,
         queryParams,
         requestHeaders,
+        req.body,
       );
 
       if (E.isLeft(result)) {

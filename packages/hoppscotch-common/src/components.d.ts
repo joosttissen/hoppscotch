@@ -195,6 +195,7 @@ declare module 'vue' {
     HttpExampleResponse: typeof import('./components/http/example/Response.vue')['default']
     HttpExampleResponseMeta: typeof import('./components/http/example/ResponseMeta.vue')['default']
     HttpExampleResponseRequest: typeof import('./components/http/example/ResponseRequest.vue')['default']
+    HttpExampleResponseScript: typeof import('./components/http/example/ResponseScript.vue')['default']
     HttpExampleResponseTab: typeof import('./components/http/example/ResponseTab.vue')['default']
     HttpHeaders: typeof import('./components/http/Headers.vue')['default']
     HttpImportCurl: typeof import('./components/http/ImportCurl.vue')['default']

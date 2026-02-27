@@ -826,7 +826,8 @@
     "pre_request_script": "Pre-request scripts are written in JavaScript, and are run before the request is sent.",
     "script_fail": "It seems there is a glitch in the pre-request script. Check the error below and fix the script accordingly.",
     "post_request_script_fail": "There seems to be an error with post-request script. Please fix the errors and run tests again",
-    "post_request_script": "Write a post-request script to automate debugging."
+    "post_request_script": "Write a post-request script to automate debugging.",
+    "post_response_script": "Post-response scripts run on the mock server when a request is received. Use them to dynamically modify the response body, headers, and status code based on the incoming request."
   },
   "hide": {
     "collection": "Collapse Collection Panel",
@@ -1757,6 +1758,7 @@
     "parameters": "Parameters",
     "post_request_script": "Post-request Script",
     "pre_request_script": "Pre-request Script",
+    "post_response_script": "Post-response Script",
     "queries": "Queries",
     "query": "Query",
     "schema": "Schema",
