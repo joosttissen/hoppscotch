@@ -1887,4 +1887,126 @@ describe('MockServerService', () => {
       expect(result.queryParams).toEqual({});
     });
   });
+
+  describe('formatExampleResponse - predefined variables', () => {
+    const makeExample = (responseBody: string, responseHeaders: any[] = []) => ({
+      key: 'ex',
+      name: 'test',
+      method: 'GET',
+      endpoint: 'http://api.example.com/test',
+      statusCode: 200,
+      statusText: 'OK',
+      responseBody,
+      responseHeaders,
+    });
+
+    test('should replace <<$timestamp>> with a UNIX timestamp', () => {
+      const before = Math.floor(Date.now() / 1000);
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('{"ts": <<$timestamp>>}'),
+        0,
+      );
+      const after = Math.floor(Date.now() / 1000);
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const match = result.right.body.match(/"ts": (\d+)/);
+        expect(match).not.toBeNull();
+        const ts = parseInt(match![1], 10);
+        expect(ts).toBeGreaterThanOrEqual(before);
+        expect(ts).toBeLessThanOrEqual(after);
+      }
+    });
+
+    test('should replace <<$isoTimestamp>> with an ISO date string', () => {
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('<<$isoTimestamp>>'),
+        0,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect(new Date(result.right.body).toString()).not.toBe('Invalid Date');
+      }
+    });
+
+    test('should replace <<$randomInt>> with an integer between 0 and 999', () => {
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('<<$randomInt>>'),
+        0,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const num = parseInt(result.right.body, 10);
+        expect(num).toBeGreaterThanOrEqual(0);
+        expect(num).toBeLessThan(1000);
+      }
+    });
+
+    test('should replace <<$guid>> with a UUID v4 formatted string', () => {
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('<<$guid>>'),
+        0,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect(result.right.body).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        );
+      }
+    });
+
+    test('should replace multiple variables in a single body', () => {
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('{"ts":<<$timestamp>>,"id":"<<$guid>>"}'),
+        0,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect(result.right.body).toMatch(/"ts":\d+/);
+        expect(result.right.body).toMatch(
+          /"id":"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"/i,
+        );
+      }
+    });
+
+    test('should leave bodies without predefined variables unchanged', () => {
+      const input = '{"hello": "world"}';
+      const result = mockServerService['formatExampleResponse'](
+        makeExample(input),
+        0,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect(result.right.body).toBe(input);
+      }
+    });
+
+    test('should replace <<$randomBoolean>> with "true" or "false"', () => {
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('<<$randomBoolean>>'),
+        0,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect(['true', 'false']).toContain(result.right.body);
+      }
+    });
+
+    test('should replace predefined variables in response header values', () => {
+      const before = Math.floor(Date.now() / 1000);
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('ok', [{ key: 'x-ts', value: '<<$timestamp>>' }]),
+        0,
+      );
+      const after = Math.floor(Date.now() / 1000);
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const headers = JSON.parse(result.right.headers);
+        const ts = parseInt(headers['x-ts'], 10);
+        expect(ts).toBeGreaterThanOrEqual(before);
+        expect(ts).toBeLessThanOrEqual(after);
+      }
+    });
+  });
 });

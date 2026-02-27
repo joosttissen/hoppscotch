@@ -9,6 +9,8 @@ import {
   MockServerLog,
 } from './mock-server.model';
 import * as E from 'fp-ts/Either';
+import { pipe } from 'fp-ts/function';
+import { parseBodyEnvVariablesE } from '@hoppscotch/data';
 import {
   MOCK_SERVER_NOT_FOUND,
   MOCK_SERVER_INVALID_COLLECTION,
@@ -1160,25 +1162,36 @@ export class MockServerService {
   }
 
   /**
-   * Format example response for return
+   * Format example response for return.
+   * Processes predefined dynamic variables (e.g. <<$timestamp>>, <<$guid>>) in
+   * the response body and header values using @hoppscotch/data's parseBodyEnvVariablesE.
    */
   private formatExampleResponse(
     example: any,
     delayInMs: number,
   ): E.Either<string, MockServerResponse> {
-    // Convert response headers array to object
+    // Convert response headers array to object, interpolating predefined variables
     const headersObj: Record<string, string> = {};
     if (example.responseHeaders && Array.isArray(example.responseHeaders)) {
       example.responseHeaders.forEach((header: any) => {
         if (header.key && header.value) {
-          headersObj[header.key] = header.value;
+          headersObj[header.key] = pipe(
+            parseBodyEnvVariablesE(header.value, []),
+            E.getOrElse(() => header.value as string),
+          );
         }
       });
     }
 
+    const rawBody = example.responseBody || '';
+    const body = pipe(
+      parseBodyEnvVariablesE(rawBody, []),
+      E.getOrElse(() => rawBody),
+    );
+
     return E.right({
       statusCode: example.statusCode || 200,
-      body: example.responseBody || '',
+      body,
       headers: JSON.stringify(headersObj),
       delay: delayInMs || 0,
     });
