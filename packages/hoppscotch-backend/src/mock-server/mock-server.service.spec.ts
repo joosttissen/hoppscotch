@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { MockServerAnalyticsService } from './mock-server-analytics.service';
 import { TeamCollectionService } from '../team-collection/team-collection.service';
 import { UserCollectionService } from '../user-collection/user-collection.service';
+import { UserEnvironmentsService } from '../user-environment/user-environments.service';
+import { TeamEnvironmentsService } from '../team-environments/team-environments.service';
 import { mockDeep, mockReset } from 'jest-mock-extended';
 import * as E from 'fp-ts/Either';
 import {
@@ -32,6 +34,8 @@ const mockAnalyticsService = mockDeep<MockServerAnalyticsService>();
 const mockConfigService = mockDeep<ConfigService>();
 const mockTeamCollectionService = mockDeep<TeamCollectionService>();
 const mockUserCollectionService = mockDeep<UserCollectionService>();
+const mockUserEnvironmentsService = mockDeep<UserEnvironmentsService>();
+const mockTeamEnvironmentsService = mockDeep<TeamEnvironmentsService>();
 
 const mockServerService = new MockServerService(
   mockConfigService,
@@ -39,6 +43,8 @@ const mockServerService = new MockServerService(
   mockAnalyticsService,
   mockTeamCollectionService,
   mockUserCollectionService,
+  mockUserEnvironmentsService,
+  mockTeamEnvironmentsService,
 );
 
 beforeEach(() => {
@@ -47,6 +53,8 @@ beforeEach(() => {
   mockReset(mockConfigService);
   mockReset(mockTeamCollectionService);
   mockReset(mockUserCollectionService);
+  mockReset(mockUserEnvironmentsService);
+  mockReset(mockTeamEnvironmentsService);
 
   // Default config values
   mockConfigService.get.mockImplementation((key: string) => {
@@ -55,6 +63,12 @@ beforeEach(() => {
     if (key === 'INFRA.ALLOW_SECURE_COOKIES') return 'false';
     return undefined;
   });
+
+  // Default: no env variables
+  mockUserEnvironmentsService.fetchUserGlobalEnvironment.mockResolvedValue(
+    E.left('USER_ENVIRONMENT_ENV_DOES_NOT_EXISTS' as any),
+  );
+  mockTeamEnvironmentsService.fetchAllTeamEnvironments.mockResolvedValue([]);
 });
 
 const currentTime = new Date();
@@ -2004,6 +2018,73 @@ describe('MockServerService', () => {
       if (E.isRight(result)) {
         const headers = JSON.parse(result.right.headers);
         const ts = parseInt(headers['x-ts'], 10);
+        expect(ts).toBeGreaterThanOrEqual(before);
+        expect(ts).toBeLessThanOrEqual(after);
+      }
+    });
+
+    test('should replace user-defined env variables in the response body', () => {
+      const envVariables = [
+        {
+          key: 'apiKey',
+          currentValue: 'secret-123',
+          initialValue: 'secret-123',
+          secret: false,
+        },
+      ];
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('{"key":"<<apiKey>>"}'),
+        0,
+        envVariables,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        expect(result.right.body).toBe('{"key":"secret-123"}');
+      }
+    });
+
+    test('should replace user-defined env variables in response header values', () => {
+      const envVariables = [
+        {
+          key: 'authToken',
+          currentValue: 'Bearer abc',
+          initialValue: 'Bearer abc',
+          secret: false,
+        },
+      ];
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('ok', [{ key: 'authorization', value: '<<authToken>>' }]),
+        0,
+        envVariables,
+      );
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const headers = JSON.parse(result.right.headers);
+        expect(headers['authorization']).toBe('Bearer abc');
+      }
+    });
+
+    test('predefined variables take priority over user-defined variables with the same name', () => {
+      // If a user defines a variable named $timestamp, the predefined one wins
+      const envVariables = [
+        {
+          key: '$timestamp',
+          currentValue: 'overridden',
+          initialValue: 'overridden',
+          secret: false,
+        },
+      ];
+      const before = Math.floor(Date.now() / 1000);
+      const result = mockServerService['formatExampleResponse'](
+        makeExample('<<$timestamp>>'),
+        0,
+        envVariables,
+      );
+      const after = Math.floor(Date.now() / 1000);
+
+      expect(E.isRight(result)).toBe(true);
+      if (E.isRight(result)) {
+        const ts = parseInt(result.right.body, 10);
         expect(ts).toBeGreaterThanOrEqual(before);
         expect(ts).toBeLessThanOrEqual(after);
       }

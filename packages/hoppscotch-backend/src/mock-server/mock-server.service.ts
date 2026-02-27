@@ -10,7 +10,11 @@ import {
 } from './mock-server.model';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
-import { parseBodyEnvVariablesE } from '@hoppscotch/data';
+import {
+  parseBodyEnvVariablesE,
+  translateToNewEnvironmentVariables,
+  Environment,
+} from '@hoppscotch/data';
 import {
   MOCK_SERVER_NOT_FOUND,
   MOCK_SERVER_INVALID_COLLECTION,
@@ -35,6 +39,8 @@ import { MockServerAnalyticsService } from './mock-server-analytics.service';
 import { PrismaError } from 'src/prisma/prisma-error-codes';
 import { TeamCollectionService } from 'src/team-collection/team-collection.service';
 import { UserCollectionService } from 'src/user-collection/user-collection.service';
+import { UserEnvironmentsService } from 'src/user-environment/user-environments.service';
+import { TeamEnvironmentsService } from 'src/team-environments/team-environments.service';
 import { ReqType } from 'src/types/RequestTypes';
 import { AuthUser } from 'src/types/AuthUser';
 import { mockServerCollRequestExample } from './constants/mock-server-coll-request-example';
@@ -47,6 +53,8 @@ export class MockServerService {
     private readonly mockServerAnalyticsService: MockServerAnalyticsService,
     private readonly teamCollectionService: TeamCollectionService,
     private readonly userCollectionService: UserCollectionService,
+    private readonly userEnvironmentsService: UserEnvironmentsService,
+    private readonly teamEnvironmentsService: TeamEnvironmentsService,
   ) {}
 
   /**
@@ -715,6 +723,9 @@ export class MockServerService {
         );
       }
 
+      // Resolve workspace environment variables once for use in response interpolation
+      const envVariables = await this.fetchWorkspaceEnvVariables(mockServer);
+
       // OPTIMIZATION: Fetch all requests with examples once (single DB query)
       // This is shared between custom header lookup and candidate matching
       const requests = await this.fetchRequestsWithExamples(
@@ -736,7 +747,7 @@ export class MockServerService {
             method,
           );
           if (exactMatch) {
-            return this.formatExampleResponse(exactMatch, mockServer.delayInMs);
+            return this.formatExampleResponse(exactMatch, mockServer.delayInMs, envVariables);
           }
         }
       }
@@ -794,6 +805,7 @@ export class MockServerService {
       return this.formatExampleResponse(
         selectedExample.example,
         mockServer.delayInMs,
+        envVariables,
       );
     } catch (error) {
       console.error('Error handling mock request:', error);
@@ -1162,21 +1174,71 @@ export class MockServerService {
   }
 
   /**
+   * Fetches the environment variables for the mock server's workspace.
+   * - USER workspace: uses the user's global environment variables.
+   * - TEAM workspace: merges variables from all team environments (first occurrence wins).
+   */
+  private async fetchWorkspaceEnvVariables(
+    mockServer: dbMockServer,
+  ): Promise<Environment['variables']> {
+    try {
+      if (mockServer.workspaceType === WorkspaceType.USER) {
+        const result =
+          await this.userEnvironmentsService.fetchUserGlobalEnvironment(
+            mockServer.workspaceID,
+          );
+        if (E.isLeft(result)) return [];
+        const rawVars = JSON.parse(result.right.variables ?? '[]');
+        return (Array.isArray(rawVars) ? rawVars : [])
+          .filter((v: any) => v && typeof v.key === 'string')
+          .map(translateToNewEnvironmentVariables);
+      } else if (mockServer.workspaceType === WorkspaceType.TEAM) {
+        const teamEnvs =
+          await this.teamEnvironmentsService.fetchAllTeamEnvironments(
+            mockServer.workspaceID,
+          );
+        const seenKeys = new Set<string>();
+        const merged: Environment['variables'] = [];
+        for (const env of teamEnvs) {
+          const rawVars = JSON.parse(env.variables ?? '[]');
+          const vars: Environment['variables'] = (
+            Array.isArray(rawVars) ? rawVars : []
+          )
+            .filter((v: any) => v && typeof v.key === 'string')
+            .map(translateToNewEnvironmentVariables);
+          for (const v of vars) {
+            if (!seenKeys.has(v.key)) {
+              seenKeys.add(v.key);
+              merged.push(v);
+            }
+          }
+        }
+        return merged;
+      }
+    } catch (error) {
+      console.error('Failed to fetch workspace env variables:', error);
+    }
+    return [];
+  }
+
+  /**
    * Format example response for return.
-   * Processes predefined dynamic variables (e.g. <<$timestamp>>, <<$guid>>) in
-   * the response body and header values using @hoppscotch/data's parseBodyEnvVariablesE.
+   * Processes predefined dynamic variables (e.g. <<$timestamp>>, <<$guid>>) and
+   * user-defined workspace environment variables (e.g. <<myVar>>) in the response
+   * body and header values using @hoppscotch/data's parseBodyEnvVariablesE.
    */
   private formatExampleResponse(
     example: any,
     delayInMs: number,
+    envVariables: Environment['variables'] = [],
   ): E.Either<string, MockServerResponse> {
-    // Convert response headers array to object, interpolating predefined variables
+    // Convert response headers array to object, interpolating variables
     const headersObj: Record<string, string> = {};
     if (example.responseHeaders && Array.isArray(example.responseHeaders)) {
       example.responseHeaders.forEach((header: any) => {
         if (header.key && header.value) {
           headersObj[header.key] = pipe(
-            parseBodyEnvVariablesE(header.value, []),
+            parseBodyEnvVariablesE(header.value, envVariables),
             E.getOrElse(() => header.value as string),
           );
         }
@@ -1185,7 +1247,7 @@ export class MockServerService {
 
     const rawBody = example.responseBody || '';
     const body = pipe(
-      parseBodyEnvVariablesE(rawBody, []),
+      parseBodyEnvVariablesE(rawBody, envVariables),
       E.getOrElse(() => rawBody),
     );
 

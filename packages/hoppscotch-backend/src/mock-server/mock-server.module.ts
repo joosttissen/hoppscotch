@@ -10,6 +10,8 @@ import { MockServerController } from './mock-server.controller';
 import { AccessTokenModule } from 'src/access-token/access-token.module';
 import { TeamCollectionModule } from 'src/team-collection/team-collection.module';
 import { UserCollectionModule } from 'src/user-collection/user-collection.module';
+import { UserEnvironmentsModule } from 'src/user-environment/user-environments.module';
+import { TeamEnvironmentsModule } from 'src/team-environments/team-environments.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { UserCollectionModule } from 'src/user-collection/user-collection.module
     TeamCollectionModule,
     TeamRequestModule,
     AccessTokenModule,
+    UserEnvironmentsModule,
+    TeamEnvironmentsModule,
   ],
   controllers: [MockServerController],
   providers: [
