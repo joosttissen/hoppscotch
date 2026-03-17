@@ -274,7 +274,7 @@ export type AuthPlatformDef = {
   signUpWithPassword?: (
     email: string,
     password: string,
-    displayName?: string,
+    displayName?: string
   ) => Promise<void>
 
   /**

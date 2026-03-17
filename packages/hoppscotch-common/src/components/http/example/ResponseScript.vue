@@ -18,16 +18,15 @@
           :title="t('state.linewrap')"
           :class="{ '!text-accent': WRAP_LINES }"
           :icon="IconWrapText"
-          @click.prevent="toggleNestedSetting('WRAP_LINES', 'httpResponseScript')"
+          @click.prevent="
+            toggleNestedSetting('WRAP_LINES', 'httpResponseScript')
+          "
         />
       </div>
     </div>
     <div class="flex flex-1 border-b border-dividerLight">
       <div class="h-full relative w-2/3 border-r border-dividerLight">
-        <div
-          ref="scriptEditor"
-          class="h-full absolute inset-0"
-        ></div>
+        <div ref="scriptEditor" class="h-full absolute inset-0"></div>
       </div>
       <div
         class="z-[9] sticky top-upperTertiaryStickyFold h-full min-w-[12rem] max-w-1/3 flex-shrink-0 overflow-auto overflow-x-auto bg-primary p-4"
