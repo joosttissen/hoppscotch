@@ -198,13 +198,15 @@ const saveExample = async () => {
     }
 
     // Update any open request tab so it doesn't overwrite the saved example
-    const requestTab = tabs.getTabs().find(
-      (t) =>
-        t.document.type === "request" &&
-        t.document.saveContext?.originLocation === "user-collection" &&
-        t.document.saveContext.folderPath === saveCtx.folderPath &&
-        t.document.saveContext.requestIndex === saveCtx.requestIndex
-    )
+    const requestTab = tabs
+      .getTabs()
+      .find(
+        (t) =>
+          t.document.type === "request" &&
+          t.document.saveContext?.originLocation === "user-collection" &&
+          t.document.saveContext.folderPath === saveCtx.folderPath &&
+          t.document.saveContext.requestIndex === saveCtx.requestIndex
+      )
     if (requestTab && requestTab.document.type === "request") {
       requestTab.document.request.responses = request.responses
     }
@@ -239,16 +241,17 @@ const saveExample = async () => {
               tab.value.document.isDirty = false
 
               // Update any open request tab so it doesn't overwrite the saved example
-              const requestTab = tabs.getTabs().find(
-                (t) =>
-                  t.document.type === "request" &&
-                  t.document.saveContext?.originLocation ===
-                    "team-collection" &&
-                  t.document.saveContext.requestID === saveCtx.requestID
-              )
+              const requestTab = tabs
+                .getTabs()
+                .find(
+                  (t) =>
+                    t.document.type === "request" &&
+                    t.document.saveContext?.originLocation ===
+                      "team-collection" &&
+                    t.document.saveContext.requestID === saveCtx.requestID
+                )
               if (requestTab && requestTab.document.type === "request") {
-                requestTab.document.request.responses =
-                  parsedRequest.responses
+                requestTab.document.request.responses = parsedRequest.responses
               }
 
               toast.success(`${t("response.saved")}`)
