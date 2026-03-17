@@ -563,8 +563,8 @@ export class MockServerService {
           requestMethod: params.requestMethod,
           requestPath: params.requestPath,
           requestHeaders: params.requestHeaders,
-          requestBody: params.requestBody || null,
-          requestQuery: params.requestQuery || null,
+          requestBody: params.requestBody ?? null,
+          requestQuery: params.requestQuery ?? null,
           responseStatus: params.responseStatus,
           responseHeaders: params.responseHeaders,
           responseBody: null, // We'll capture response body separately if needed
