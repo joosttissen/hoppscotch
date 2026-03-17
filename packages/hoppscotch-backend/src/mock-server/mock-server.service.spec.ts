@@ -983,6 +983,75 @@ describe('MockServerService', () => {
         mockServerService.logRequest(logParams),
       ).resolves.not.toThrow();
     });
+
+    test('should log text/plain request body as a string', async () => {
+      const textPlainParams = {
+        ...logParams,
+        requestHeaders: { 'content-type': 'text/plain' },
+        requestBody: 'Hello, World!',
+      };
+
+      mockPrisma.mockServerLog.create.mockResolvedValue({
+        id: 'log456',
+        ...textPlainParams,
+        responseBody: null,
+        executedAt: currentTime,
+      } as any);
+
+      await mockServerService.logRequest(textPlainParams);
+
+      expect(mockPrisma.mockServerLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          requestBody: 'Hello, World!',
+        }),
+      });
+    });
+
+    test('should preserve empty string body and not coerce it to null', async () => {
+      const emptyBodyParams = {
+        ...logParams,
+        requestHeaders: { 'content-type': 'text/plain' },
+        requestBody: '',
+      };
+
+      mockPrisma.mockServerLog.create.mockResolvedValue({
+        id: 'log789',
+        ...emptyBodyParams,
+        responseBody: null,
+        executedAt: currentTime,
+      } as any);
+
+      await mockServerService.logRequest(emptyBodyParams);
+
+      expect(mockPrisma.mockServerLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          requestBody: '',
+        }),
+      });
+    });
+
+    test('should store null when request has no body', async () => {
+      const noBodyParams = {
+        ...logParams,
+        requestBody: undefined,
+      };
+
+      mockPrisma.mockServerLog.create.mockResolvedValue({
+        id: 'log000',
+        ...noBodyParams,
+        requestBody: null,
+        responseBody: null,
+        executedAt: currentTime,
+      } as any);
+
+      await mockServerService.logRequest(noBodyParams);
+
+      expect(mockPrisma.mockServerLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          requestBody: null,
+        }),
+      });
+    });
   });
 
   describe('getMockServerLogs', () => {
