@@ -62,6 +62,7 @@ const SettingsDefSchema = z.object({
       httpUrlEncoded: z.boolean().catch(true),
       httpPreRequest: z.boolean().catch(true),
       httpTest: z.boolean().catch(true),
+      httpResponseScript: z.boolean().catch(true),
       httpRequestVariables: z.boolean().catch(true),
       graphqlQuery: z.boolean().catch(true),
       graphqlResponseBody: z.boolean().catch(true),
