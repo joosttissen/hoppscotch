@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { json } from 'express';
+import { json, text, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
@@ -69,6 +69,18 @@ async function bootstrap() {
   app.use(
     json({
       limit: '100mb',
+    }),
+  );
+  app.use(
+    text({
+      limit: '100mb',
+      type: ['text/*', 'application/xml'],
+    }),
+  );
+  app.use(
+    urlencoded({
+      limit: '100mb',
+      extended: true,
     }),
   );
 
